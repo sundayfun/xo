@@ -6,7 +6,7 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 
-	"github.com/xo/xo/internal"
+	"github.com/sundayfun/xo/internal"
 	"github.com/xo/xo/models"
 )
 
