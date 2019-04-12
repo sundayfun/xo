@@ -735,8 +735,9 @@ func (tl TypeLoader) LoadTableIndexes(args *ArgType, typeTpl *Type, ixMap map[st
 	// sqlite doesn't define primary keys in its index list
 	if args.LoaderType != "ora" && !priIxLoaded && pk != nil {
 		ixName := typeTpl.Table.TableName + "_" + pk.Col.ColumnName + "_pkey"
-		ixMap[ixName] = &Index{
-			FuncName: typeTpl.Name + "By" + pk.Name,
+		funcName := typeTpl.Name + "By" + pk.Name
+		ixMap[funcName] = &Index{
+			FuncName: funcName,
 			Schema:   args.Schema,
 			Type:     typeTpl,
 			Fields:   []*Field{pk},
