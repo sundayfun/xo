@@ -705,12 +705,23 @@ func (tl TypeLoader) LoadTableIndexes(args *ArgType, typeTpl *Type, ixMap map[st
 
 		l := len(ixTpl.Fields)
 		for i := 0; i < l; i++ {
+			index := &models.Index{
+				IndexName: ix.IndexName,
+				IsUnique:  ix.IsUnique,
+				IsPrimary: ix.IsPrimary,
+				SeqNo:     ix.SeqNo,
+				Origin:    ix.Origin,
+				IsPartial: ix.IsPartial,
+			}
+			if i > 0 {
+				index.IsUnique = false
+			}
 			// fake index according to Leftmost Prefixing for generating query func
 			ixTplNew := &Index{
 				Schema: args.Schema,
 				Type:   typeTpl,
 				Fields: ixTpl.Fields[:l-i],
-				Index:  ix,
+				Index:  index,
 			}
 			// build func name
 			args.BuildIndexFuncName(ixTplNew)
