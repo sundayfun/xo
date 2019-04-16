@@ -3,6 +3,7 @@ package internal
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/gedex/inflector"
@@ -662,8 +663,14 @@ func (tl TypeLoader) LoadIndexes(args *ArgType, tableMap map[string]*Type) (map[
 		}
 	}
 
+	indexes := make([]*Index, 0, len(ixMap))
+	for _, v := range ixMap {
+		indexes = append(indexes, v)
+	}
+	indexSets := IndexSet(indexes)
+	sort.Sort(indexSets)
 	// generate templates
-	for _, ix := range ixMap {
+	for _, ix := range indexSets {
 		err = args.ExecuteTemplate(IndexTemplate, ix.Type.Name, ix.Index.IndexName, ix)
 		if err != nil {
 			return nil, err
@@ -705,12 +712,23 @@ func (tl TypeLoader) LoadTableIndexes(args *ArgType, typeTpl *Type, ixMap map[st
 
 		l := len(ixTpl.Fields)
 		for i := 0; i < l; i++ {
+			index := &models.Index{
+				IndexName: ix.IndexName,
+				IsUnique:  ix.IsUnique,
+				IsPrimary: ix.IsPrimary,
+				SeqNo:     ix.SeqNo,
+				Origin:    ix.Origin,
+				IsPartial: ix.IsPartial,
+			}
+			if i > 0 {
+				index.IsUnique = false
+			}
 			// fake index according to Leftmost Prefixing for generating query func
 			ixTplNew := &Index{
 				Schema: args.Schema,
 				Type:   typeTpl,
 				Fields: ixTpl.Fields[:l-i],
-				Index:  ix,
+				Index:  index,
 			}
 			// build func name
 			args.BuildIndexFuncName(ixTplNew)
@@ -783,4 +801,16 @@ func (tl TypeLoader) LoadIndexColumns(args *ArgType, ixTpl *Index) error {
 	}
 
 	return nil
+}
+
+func (is IndexSet) Len() int {
+	return len(is)
+}
+
+func (is IndexSet) Swap(i, j int) {
+	is[i], is[j] = is[j], is[i]
+}
+
+func (is IndexSet) Less(i, j int) bool {
+	return strings.Compare(is[i].FuncName, is[j].FuncName) < 0
 }
