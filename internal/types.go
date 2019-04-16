@@ -141,6 +141,8 @@ type ForeignKey struct {
 	Comment    string
 }
 
+type IndexSet []*Index
+
 // Index is a template item for a index into a table.
 type Index struct {
 	FuncName string
