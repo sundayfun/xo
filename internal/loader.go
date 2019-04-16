@@ -3,7 +3,6 @@ package internal
 import (
 	"errors"
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/gedex/inflector"
@@ -663,15 +662,9 @@ func (tl TypeLoader) LoadIndexes(args *ArgType, tableMap map[string]*Type) (map[
 		}
 	}
 
-	indexes := make([]*Index, 0, len(ixMap))
-	for _, v := range ixMap {
-		indexes = append(indexes, v)
-	}
-	indexSets := IndexSet(indexes)
-	sort.Sort(indexSets)
 	// generate templates
-	for _, ix := range indexSets {
-		err = args.ExecuteTemplate(IndexTemplate, ix.Type.Name, ix.Index.IndexName, ix)
+	for _, ix := range ixMap {
+		err = args.ExecuteTemplate(IndexTemplate, ix.Type.Name, ix.FuncName, ix)
 		if err != nil {
 			return nil, err
 		}
@@ -801,16 +794,4 @@ func (tl TypeLoader) LoadIndexColumns(args *ArgType, ixTpl *Index) error {
 	}
 
 	return nil
-}
-
-func (is IndexSet) Len() int {
-	return len(is)
-}
-
-func (is IndexSet) Swap(i, j int) {
-	is[i], is[j] = is[j], is[i]
-}
-
-func (is IndexSet) Less(i, j int) bool {
-	return strings.Compare(is[i].FuncName, is[j].FuncName) < 0
 }
