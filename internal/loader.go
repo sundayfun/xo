@@ -746,20 +746,30 @@ func (tl TypeLoader) LoadTableIndexes(args *ArgType, typeTpl *Type, ixMap map[st
 	// sqlite doesn't define primary keys in its index list
 	if args.LoaderType != "ora" && !priIxLoaded && pk != nil {
 		ixName := typeTpl.Table.TableName + "_" + pk.Col.ColumnName + "_pkey"
-		funcName := typeTpl.Name + "By" + pk.Name
-		ixMap[funcName] = &Index{
-			FuncName: funcName,
-			Schema:   args.Schema,
-			Type:     typeTpl,
-			Fields:   []*Field{pk},
-			Index: &models.Index{
-				IndexName: ixName,
-				IsUnique:  true,
-				IsPrimary: true,
-			},
+		l := len(typeTpl.PrimaryKeyFields)
+		for i := 0; i < len(typeTpl.PrimaryKeyFields); i++ {
+			var unique bool
+			if i == 0 {
+				unique = true
+			} else {
+				unique = false
+			}
+			idx := &Index{
+				Schema: args.Schema,
+				Type:   typeTpl,
+				Fields: typeTpl.PrimaryKeyFields[:l-i],
+				Index: &models.Index{
+					IndexName: ixName,
+					IsUnique:  unique,
+					IsPrimary: true,
+				},
+			}
+			args.BuildIndexFuncName(idx)
+			if _, ok := ixMap[idx.FuncName]; !ok {
+				ixMap[idx.FuncName] = idx
+			}
 		}
 	}
-
 	return nil
 }
 
