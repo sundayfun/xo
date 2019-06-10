@@ -150,6 +150,9 @@ type ArgType struct {
 	// ShortNameTypeMap is the collection of Go style short names for types, mainly
 	// used for use with declaring a func receiver on a type.
 	ShortNameTypeMap map[string]string `arg:"-"`
+
+	// GeoInfoTypeMap stores geo info type, eg. point, Polygon, MultiPolygon
+	GeoInfoTypeMap map[string]bool `arg:"-"`
 }
 
 // NewDefaultArgs returns the default arguments.
@@ -171,6 +174,7 @@ func NewDefaultArgs() *ArgType {
 			"byte":        true,
 			"rune":        true,
 			"int":         true,
+			"int8":        true,
 			"int16":       true,
 			"int32":       true,
 			"int64":       true,
@@ -205,6 +209,13 @@ func NewDefaultArgs() *ArgType {
 			"float64":     "f",
 			"Slice":       "s",
 			"StringSlice": "ss",
+		},
+
+		//
+		GeoInfoTypeMap: map[string]bool{
+			"Point":        true,
+			"Polygon":      true,
+			"MultiPolygon": true,
 		},
 	}
 }
