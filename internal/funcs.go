@@ -6,8 +6,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/gedex/inflector"
 	"github.com/knq/snaker"
-
 	"github.com/xo/xo/models"
 )
 
@@ -36,6 +36,7 @@ func (a *ArgType) NewTemplateFuncs() template.FuncMap {
 		"hascolumn":          a.hascolumn,
 		"hasfield":           a.hasfield,
 		"getstartcount":      a.getstartcount,
+		"pluralize":          a.pluralize,
 	}
 }
 
@@ -722,4 +723,8 @@ func (a *ArgType) hasfield(fields []*Field, name string) bool {
 // getstartcount returns a starting count for numbering columsn in queries
 func (a *ArgType) getstartcount(fields []*Field, pkFields []*Field) int {
 	return len(fields) - len(pkFields)
+}
+
+func (a *ArgType) pluralize(name string) string {
+	return inflector.Pluralize(name)
 }
