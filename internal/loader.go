@@ -542,6 +542,10 @@ func (tl TypeLoader) LoadColumns(args *ArgType, typeTpl *Type) error {
 			typeTpl.PrimaryKey = f
 		}
 
+		if c.ColumnName == "is_deleted" && f.Type == "bool" {
+			typeTpl.HasDeletedField = true
+		}
+
 		// append col to template fields
 		typeTpl.Fields = append(typeTpl.Fields, f)
 	}

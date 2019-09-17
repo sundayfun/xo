@@ -127,6 +127,7 @@ type Type struct {
 	Fields           []*Field
 	Table            *models.Table
 	Comment          string
+	HasDeletedField  bool
 }
 
 // ForeignKey is a template item for a foreign relationship on a table.
