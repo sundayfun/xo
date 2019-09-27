@@ -37,6 +37,7 @@ func (a *ArgType) NewTemplateFuncs() template.FuncMap {
 		"hasfield":           a.hasfield,
 		"getstartcount":      a.getstartcount,
 		"pluralize":          a.pluralize,
+		"snaketocamel":       a.snaketocamel,
 	}
 }
 
@@ -747,4 +748,8 @@ func (a *ArgType) getstartcount(fields []*Field, pkFields []*Field) int {
 
 func (a *ArgType) pluralize(name string) string {
 	return inflector.Pluralize(name)
+}
+
+func (a *ArgType) snaketocamel(name string) string {
+	return snaker.ForceLowerCamelIdentifier(name)
 }

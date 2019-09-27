@@ -181,6 +181,22 @@ func (a *ArgType) BuildIndexFuncName(ixTpl *Index) {
 	ixTpl.FuncName = funcName + strings.Join(paramNames, "")
 }
 
+// BuildIndexMapFuncName builds the index map func name for an index and its supplied
+// fields.
+func (a *ArgType) BuildIndexMapFuncName(ixTpl *Index) {
+	// build map func name
+	mapFuncName := inflector.Pluralize(ixTpl.Type.Name) + "Map"
+	mapFuncName = mapFuncName + "By"
+
+	// add param names
+	if len(ixTpl.Fields) >= 1 {
+		mapField := ixTpl.Fields[len(ixTpl.Fields)-1]
+		ixTpl.MapField = mapField
+		ixTpl.MapFuncName = mapFuncName + inflector.Pluralize(mapField.Name)
+	}
+	// store resulting name back
+}
+
 // letters for GenRandomID
 var letters = []rune("abcdefghijklmnopqrstuvwxyz0123456789")
 

@@ -12,6 +12,7 @@ const (
 	TypeTemplate
 	ForeignKeyTemplate
 	IndexTemplate
+	MapTemplate
 	QueryTypeTemplate
 	QueryTemplate
 
@@ -35,6 +36,8 @@ func (tt TemplateType) String() string {
 		s = "foreignkey"
 	case IndexTemplate:
 		s = "index"
+	case MapTemplate:
+		s = "map"
 	case QueryTypeTemplate:
 		s = "querytype"
 	case QueryTemplate:
@@ -63,6 +66,13 @@ const (
 	SchemaEsc = iota
 	TableEsc
 	ColumnEsc
+)
+
+type LoadType uint
+
+const (
+	LoadQueryFunc = iota
+	LoadMapFunc
 )
 
 // String provides the string representation of RelType.
@@ -144,12 +154,14 @@ type ForeignKey struct {
 
 // Index is a template item for a index into a table.
 type Index struct {
-	FuncName string
-	Schema   string
-	Type     *Type
-	Fields   []*Field
-	Index    *models.Index
-	Comment  string
+	FuncName    string
+	MapFuncName string
+	MapField    *Field
+	Schema      string
+	Type        *Type
+	Fields      []*Field
+	Index       *models.Index
+	Comment     string
 }
 
 // QueryParam is a query parameter for a custom query.

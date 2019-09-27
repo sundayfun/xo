@@ -288,6 +288,11 @@ func (tl TypeLoader) LoadSchema(args *ArgType) error {
 		return err
 	}
 
+	_, err = tl.LoadIndexesQueryMapFunc(args, tableMap)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -660,7 +665,7 @@ func (tl TypeLoader) LoadIndexes(args *ArgType, tableMap map[string]*Type) (map[
 	ixMap := map[string]*Index{}
 	for _, t := range tableMap {
 		// load table indexes
-		err = tl.LoadTableIndexes(args, t, ixMap)
+		err = tl.LoadTableIndexes(args, t, ixMap, LoadQueryFunc)
 		if err != nil {
 			return nil, err
 		}
@@ -677,8 +682,32 @@ func (tl TypeLoader) LoadIndexes(args *ArgType, tableMap map[string]*Type) (map[
 	return ixMap, nil
 }
 
+// LoadIndexesQueryMapFunc loads schema index definitions.
+func (tl TypeLoader) LoadIndexesQueryMapFunc(args *ArgType, tableMap map[string]*Type) (map[string]*Index, error) {
+	var err error
+
+	ixMap := map[string]*Index{}
+	for _, t := range tableMap {
+		// load table indexes
+		err = tl.LoadTableIndexes(args, t, ixMap, LoadMapFunc)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// generate templates
+	for _, ix := range ixMap {
+		err = args.ExecuteTemplate(MapTemplate, ix.Type.Name, ix.MapFuncName, ix)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return ixMap, nil
+}
+
 // LoadTableIndexes loads schema index definitions per table.
-func (tl TypeLoader) LoadTableIndexes(args *ArgType, typeTpl *Type, ixMap map[string]*Index) error {
+func (tl TypeLoader) LoadTableIndexes(args *ArgType, typeTpl *Type, ixMap map[string]*Index, loadType LoadType) error {
 	var err error
 	var priIxLoaded bool
 
@@ -727,10 +756,16 @@ func (tl TypeLoader) LoadTableIndexes(args *ArgType, typeTpl *Type, ixMap map[st
 				Fields: ixTpl.Fields[:l-i],
 				Index:  index,
 			}
-			// build func name
-			args.BuildIndexFuncName(ixTplNew)
-			// distinct func name
-			ixMap[ixTplNew.FuncName] = ixTplNew
+			if loadType == LoadQueryFunc {
+				// build func name
+				args.BuildIndexFuncName(ixTplNew)
+				// distinct func name
+				ixMap[ixTplNew.FuncName] = ixTplNew
+			}
+		}
+		if loadType == LoadMapFunc && len(ixTpl.Fields) == 1 && ix.IsUnique {
+			args.BuildIndexMapFuncName(ixTpl)
+			ixMap[ixTpl.MapFuncName] = ixTpl
 		}
 	}
 
@@ -751,16 +786,25 @@ func (tl TypeLoader) LoadTableIndexes(args *ArgType, typeTpl *Type, ixMap map[st
 	if args.LoaderType != "ora" && !priIxLoaded && pk != nil {
 		ixName := typeTpl.Table.TableName + "_" + pk.Col.ColumnName + "_pkey"
 		funcName := typeTpl.Name + "By" + pk.Name
-		ixMap[funcName] = &Index{
-			FuncName: funcName,
-			Schema:   args.Schema,
-			Type:     typeTpl,
-			Fields:   []*Field{pk},
+		mapFuncName := inflector.Pluralize(typeTpl.Name) + "MapBy" + inflector.Pluralize(pk.Name)
+		idx := &Index{
+			FuncName:    funcName,
+			MapFuncName: mapFuncName,
+			MapField:    pk,
+			Schema:      args.Schema,
+			Type:        typeTpl,
+			Fields:      []*Field{pk},
 			Index: &models.Index{
 				IndexName: ixName,
 				IsUnique:  true,
 				IsPrimary: true,
 			},
+		}
+		switch loadType {
+		case LoadQueryFunc:
+			ixMap[funcName] = idx
+		case LoadMapFunc:
+			ixMap[mapFuncName] = idx
 		}
 	}
 
