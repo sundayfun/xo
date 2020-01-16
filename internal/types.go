@@ -15,6 +15,7 @@ const (
 	MapTemplate
 	QueryTypeTemplate
 	QueryTemplate
+	OptionalTemplate
 
 	// always last
 	XOTemplate
@@ -42,6 +43,8 @@ func (tt TemplateType) String() string {
 		s = "querytype"
 	case QueryTemplate:
 		s = "query"
+	case OptionalTemplate:
+		s = "optional"
 	default:
 		panic("unknown TemplateType")
 	}
@@ -87,6 +90,10 @@ func (rt RelType) String() string {
 		panic("unknown RelType")
 	}
 	return s
+}
+
+type MethodsConfig struct {
+	ListFields []string `yaml:"list_fields"`
 }
 
 // EnumValue holds data for a single enum value.
@@ -162,6 +169,12 @@ type Index struct {
 	Fields      []*Field
 	Index       *models.Index
 	Comment     string
+}
+
+type MethodsOption struct {
+	Type       *Type
+	Sub        string
+	ListFields bool
 }
 
 // QueryParam is a query parameter for a custom query.
