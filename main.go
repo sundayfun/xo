@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/alexflint/go-arg"
+	"github.com/go-yaml/yaml"
 
 	"github.com/sundayfun/xo/internal"
 	_ "github.com/sundayfun/xo/loaders"
@@ -200,6 +201,27 @@ func processArgs(args *internal.ArgType) error {
 		}
 	}
 
+	if args.MethodsConfigFile != "" {
+		err = parseMethodsConfigFile(args)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func parseMethodsConfigFile(args *internal.ArgType) error {
+	data, err := ioutil.ReadFile(args.MethodsConfigFile)
+	if err != nil {
+		return err
+	}
+	m := &internal.MethodsConfig{}
+	err = yaml.Unmarshal(data, &m)
+	if err != nil {
+		return err
+	}
+	args.Methods = m
 	return nil
 }
 
