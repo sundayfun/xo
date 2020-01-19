@@ -153,6 +153,12 @@ type ArgType struct {
 
 	// GeoInfoTypeMap stores geo info type, eg. point, Polygon, MultiPolygon
 	GeoInfoTypeMap map[string]bool `arg:"-"`
+
+	// Methods config file controls generation of specified methods for tables.
+	MethodsConfigFile string `arg:"--methods-config-file,help: specified methods config for tables"`
+
+	// parsed from MethodsConfigFile
+	Methods *MethodsConfig `arg:"-"`
 }
 
 // NewDefaultArgs returns the default arguments.

@@ -293,6 +293,10 @@ func (tl TypeLoader) LoadSchema(args *ArgType) error {
 		return err
 	}
 
+	err = tl.LoadOptionalMethods(args, tableMap)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -680,6 +684,39 @@ func (tl TypeLoader) LoadIndexes(args *ArgType, tableMap map[string]*Type) (map[
 	}
 
 	return ixMap, nil
+}
+
+// LoadIndexes loads schema index definitions.
+func (tl TypeLoader) LoadOptionalMethods(args *ArgType, tableMap map[string]*Type) error {
+	if args.Methods == nil {
+		return nil
+	}
+	m1 := make(map[string]struct{}, len(args.Methods.ListFields))
+	for _, c := range args.Methods.ListFields {
+		m1[c] = struct{}{}
+	}
+
+	fm := map[string]*MethodsOption{}
+	for tableName, t := range tableMap {
+		option := &MethodsOption{
+			Type: t,
+			Sub:  fmt.Sprintf("%sOptional", t.Name),
+		}
+		if _, ok := m1[tableName]; ok {
+			option.ListFields = true
+		}
+		if option.ListFields {
+			fm[tableName] = option
+		}
+	}
+	for _, f := range fm {
+		// generate templates
+		err := args.ExecuteTemplate(OptionalTemplate, f.Type.Name, f.Sub, f)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // LoadIndexesQueryMapFunc loads schema index definitions.
