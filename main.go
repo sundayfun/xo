@@ -24,6 +24,8 @@ import (
 	_ "github.com/xo/xoutil"
 )
 
+const version = "1.0.0"
+
 func main() {
 	// circumvent all logic to just determine if xo was built with oracle
 	// support
@@ -34,6 +36,11 @@ func main() {
 		}
 
 		fmt.Fprintf(os.Stdout, "%d", out)
+		return
+	}
+
+	if len(os.Args) == 2 && os.Args[1] == "-version" {
+		fmt.Fprintf(os.Stdout, version)
 		return
 	}
 
