@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"text/template"
@@ -38,6 +39,9 @@ func (a *ArgType) NewTemplateFuncs() template.FuncMap {
 		"getstartcount":      a.getstartcount,
 		"pluralize":          a.pluralize,
 		"snaketocamel":       a.snaketocamel,
+		"modelToPB":          a.modelToPB,
+		"PBToModel":          a.PBToModel,
+		"proto":              a.proto,
 	}
 }
 
@@ -752,4 +756,249 @@ func (a *ArgType) pluralize(name string) string {
 
 func (a *ArgType) snaketocamel(name string) string {
 	return snaker.ForceLowerCamelIdentifier(name)
+}
+
+func (a *ArgType) modelToPB(option *MethodsOption) string {
+	if !option.ModelToPB {
+		return ""
+	}
+	var body, shortName string
+
+	fieldsAssignment := make([]string, 0, len(option.Type.Fields))
+
+	shortName = a.shortname(option.Type.Name)
+
+	for _, field := range option.Type.Fields {
+		if _, ok := option.ModelToPBConfig.SkipFields[field.Col.ColumnName]; ok {
+			continue
+		}
+		if !field.Col.NotNull {
+			continue
+		}
+		var f, fa string
+		if field.Type == "time.Time" {
+			f = snaker.ForceLowerCamelIdentifier(field.Col.ColumnName)
+			body = body + fmt.Sprintf(
+				`%s, err := ptypes.TimestampProto(%s.%s)
+	if err != nil {
+		return nil, err
+	}
+`, f, shortName, field.Name)
+			fa = fmt.Sprintf(`%s:%s,`, SnakeToCamelWithoutInitialisms(field.Col.ColumnName), f)
+		} else {
+			if t, ok := a.ToPBTypeMap[field.Type]; ok {
+				fa = fmt.Sprintf(`%s:%s(%s.%s),`, SnakeToCamelWithoutInitialisms(field.Col.ColumnName),
+					t, shortName, field.Name)
+			} else {
+				fa = fmt.Sprintf(`%s:%s.%s,`, SnakeToCamelWithoutInitialisms(field.Col.ColumnName),
+					shortName, field.Name)
+			}
+		}
+		fieldsAssignment = append(fieldsAssignment, fa)
+	}
+	body = body + fmt.Sprintf(
+		`proto%s := &proto.%s{
+	%s
+}
+`, option.Type.Name, option.Type.Name, strings.Join(fieldsAssignment, "\n"))
+	for _, field := range option.Type.Fields {
+		if field.Col.NotNull {
+			continue
+		}
+		if _, ok := option.ModelToPBConfig.SkipFields[field.Col.ColumnName]; ok {
+			continue
+		}
+		var s, fa string
+		s = SnakeToCamelWithoutInitialisms(field.Col.ColumnName)
+		if field.Type == "mysql.NullTime" {
+			f := snaker.ForceLowerCamelIdentifier(field.Col.ColumnName)
+			fa = fmt.Sprintf(
+				`if %s.%s.Valid {
+	%s, err := ptypes.TimestampProto(%s.%s.Time)
+	if err != nil {
+		return nil, err
+	}
+	proto%s.%s = %s
+}
+`, shortName, field.Name,
+				f, shortName, field.Name,
+				option.Type.Name, s, f)
+		} else {
+			if typ, ok := a.WrapperTypeMap[field.Type]; ok {
+				fa = fmt.Sprintf(
+					`if %s.%s.Valid {
+	proto%s.%s = &wrappers.%s{Value:%s.%s.%s}
+}
+`, shortName, field.Name, option.Type.Name, s, typ, shortName, field.Name, strings.Trim(typ, "Value"))
+			}
+		}
+		body = body + fa
+	}
+
+	body = body + fmt.Sprintf("\nreturn proto%s, nil", option.Type.Name)
+	return body
+}
+
+func (a *ArgType) PBToModel(option *MethodsOption) string {
+	if !option.ModelToPB {
+		return ""
+	}
+	var body, shortName string
+
+	fieldsAssignment := make([]string, 0, len(option.Type.Fields))
+
+	shortName = a.shortname(option.Type.Name)
+
+	for _, field := range option.Type.Fields {
+		if _, ok := option.ModelToPBConfig.SkipFields[field.Col.ColumnName]; ok {
+			continue
+		}
+		if !field.Col.NotNull {
+			continue
+		}
+		var f, fa string
+		if field.Type == "time.Time" {
+			f = snaker.ForceLowerCamelIdentifier(field.Col.ColumnName)
+			body = body + fmt.Sprintf(
+				`%s, err := ptypes.Timestamp(proto%s.%s)
+	if err != nil {
+		return nil, err
+	}
+`, f, option.Type.Name, field.Name)
+			fa = fmt.Sprintf(`%s:%s,`, field.Name, f)
+		} else {
+			if _, ok := a.ToPBTypeMap[field.Type]; ok {
+				fa = fmt.Sprintf(`%s:%s(proto%s.%s),`, field.Name, field.Type, option.Type.Name,
+					SnakeToCamelWithoutInitialisms(field.Col.ColumnName))
+			} else {
+				fa = fmt.Sprintf(`%s:proto%s.%s,`, field.Name, option.Type.Name,
+					SnakeToCamelWithoutInitialisms(field.Col.ColumnName))
+			}
+		}
+		fieldsAssignment = append(fieldsAssignment, fa)
+	}
+
+	body = body + fmt.Sprintf(
+		`%s := &%s{
+	%s
+}
+`, shortName, option.Type.Name, strings.Join(fieldsAssignment, "\n"))
+
+	for _, field := range option.Type.Fields {
+		if _, ok := option.ModelToPBConfig.SkipFields[field.Col.ColumnName]; ok {
+			continue
+		}
+		if field.Col.NotNull {
+			continue
+		}
+		var s, fa string
+		s = SnakeToCamelWithoutInitialisms(field.Col.ColumnName)
+		if field.Type == "mysql.NullTime" {
+			f := snaker.ForceLowerCamelIdentifier(field.Col.ColumnName)
+			fa = fmt.Sprintf(
+				`if proto%s.%s != nil {
+	%s, err := ptypes.Timestamp(proto%s.%s)
+	if err != nil {
+		return nil, err
+	}
+	%s.%s = mysql.NullTime{Time:%s, Valid:true}
+}
+`, option.Type.Name, s,
+				f, option.Type.Name, s,
+				shortName, field.Name, f)
+		} else {
+			if typ, ok := a.WrapperTypeMap[field.Type]; ok {
+				fa = fmt.Sprintf(
+					`if proto%s.%s != nil {
+	%s.%s = %s{%s:proto%s.%s.Value, Valid:true}
+}
+`, option.Type.Name, s, shortName, field.Name, field.Type, strings.Trim(typ, "Value"), option.Type.Name, s)
+			}
+		}
+		body = body + fa
+	}
+
+	body = body + fmt.Sprintf("\nreturn %s, nil", shortName)
+	return body
+}
+
+func (a *ArgType) proto(pc ProtoConfig) string {
+	if len(pc) == 0 {
+		return ""
+	}
+	sort.Stable(pc)
+
+	svc := pc[0].ModelToPBConfig.ImportService
+	var body string
+
+	imports := make([]string, 0)
+	m := make(map[string]struct{}, 0)
+	for _, p := range pc {
+		for _, f := range p.Type.Fields {
+			if _, ok := p.ModelToPBConfig.SkipFields[f.Col.ColumnName]; ok {
+				continue
+			}
+			if i, ok := a.ImportMap[f.Type]; ok {
+				if _, ok = m[i]; ok {
+					continue
+				}
+				m[i] = struct{}{}
+				imports = append(imports, fmt.Sprintf(`import "%s";`, i))
+			}
+		}
+	}
+
+	body = body + fmt.Sprintf(
+		`package proto.%s;
+
+%s
+
+option go_package = "%s/%s/proto";
+option java_multiple_files = true;
+option objc_class_prefix = "RPC";
+`, svc, strings.Join(imports, "\n"), a.ServerProtoPathPrefix, svc)
+
+	for _, p := range pc {
+		fieldsDef := make([]string, 0, len(p.Type.Fields))
+		count := 1
+		for _, f := range p.Type.Fields {
+			if _, ok := p.ModelToPBConfig.SkipFields[f.Col.ColumnName]; ok {
+				continue
+			}
+			def := fmt.Sprintf("\t%s %s = %d;", f.Type, f.Col.ColumnName, count)
+			if v, ok := a.ToPBTypeMap[f.Type]; ok {
+				def = fmt.Sprintf("\t%s %s = %d;", v, f.Col.ColumnName, count)
+			}
+			if v, ok := a.WrapperTypeMap[f.Type]; ok {
+				def = fmt.Sprintf("\tgoogle.protobuf.%s %s = %d;", v, f.Col.ColumnName, count)
+			}
+			if f.Type == "mysql.NullTime" || f.Type == "time.Time" {
+				def = fmt.Sprintf("\tgoogle.protobuf.Timestamp %s = %d;", f.Col.ColumnName, count)
+			}
+			if f.Comment != "" {
+				def = fmt.Sprintf("%s\n%s", f.Comment, def)
+			}
+			fieldsDef = append(fieldsDef, def)
+			count++
+		}
+		body = body + fmt.Sprintf(
+			`message %s {
+%s
+}
+`, p.Type.Name, strings.Join(fieldsDef, "\n"))
+	}
+	return body
+}
+
+// proto 对于 id -> Id
+func SnakeToCamelWithoutInitialisms(str string) string {
+	var r string
+
+	for _, w := range strings.Split(str, "_") {
+		if w == "" {
+			continue
+		}
+		r += strings.ToUpper(w[:1]) + strings.ToLower(w[1:])
+	}
+	return r
 }
