@@ -1,0 +1,10 @@
+list_fields:
+model_to_pb:
+  user: # service
+    - # model
+      name: user
+      skip:
+        - password
+    -
+      name: user_ads
+      skip:
