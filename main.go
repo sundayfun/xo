@@ -89,7 +89,7 @@ func main() {
 	}
 
 	// add xo
-	err = args.ExecuteTemplate(internal.XOTemplate, "xo_db", "", args)
+	err = args.ExecuteTemplate(internal.XOTemplate, "xo_db", "", args, false)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
@@ -97,6 +97,12 @@ func main() {
 
 	// output
 	err = writeTypes(args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
+
+	err = writeProto(args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
@@ -267,16 +273,22 @@ var files = map[string]*os.File{}
 // getFile builds the filepath from the TBuf information, and retrieves the
 // file from files. If the built filename is not already defined, then it calls
 // the os.OpenFile with the correct parameters depending on the state of args.
-func getFile(args *internal.ArgType, t *internal.TBuf) (*os.File, error) {
+func getFile(args *internal.ArgType, t *internal.TBuf, isProto bool) (*os.File, error) {
 	var f *os.File
 	var err error
 
 	// determine filename
-	var filename = strings.ToLower(t.Name) + args.Suffix
-	if args.SingleFile {
-		filename = args.Filename
+	filename := strings.ToLower(t.Name)
+	if isProto {
+		filename = fmt.Sprintf("%s_model.proto", filename)
+		filename = path.Join(args.RpcProtoPathPrefix, filename)
+	} else {
+		filename = filename + args.Suffix
+		if args.SingleFile {
+			filename = args.Filename
+		}
+		filename = path.Join(args.Path, filename)
 	}
-	filename = path.Join(args.Path, filename)
 
 	// lookup file
 	f, ok := files[filename]
@@ -308,7 +320,7 @@ func getFile(args *internal.ArgType, t *internal.TBuf) (*os.File, error) {
 	}
 
 	// file didn't originally exist, so add package header
-	if fi == nil || !args.Append {
+	if !isProto && (fi == nil || !args.Append) {
 		// add build tags
 		if args.Tags != "" {
 			f.WriteString(`// +build ` + args.Tags + "\n\n")
@@ -352,7 +364,7 @@ func writeTypes(args *internal.ArgType) error {
 		}
 
 		// get file and filename
-		f, err = getFile(args, &t)
+		f, err = getFile(args, &t, false)
 		if err != nil {
 			return err
 		}
@@ -381,12 +393,58 @@ func writeTypes(args *internal.ArgType) error {
 		if err != nil {
 			return err
 		}
+		delete(files, k)
 	}
 
 	// process written files with goimports
 	output, err := exec.Command("goimports", params...).CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("%s with error message: %s", output, err.Error())
+	}
+
+	return nil
+}
+
+func writeProto(args *internal.ArgType) error {
+	var err error
+
+	out := internal.TBufSlice(args.GeneratedProto)
+
+	// sort segments
+	sort.Sort(out)
+
+	// loop, writing in order
+	for _, t := range out {
+		var f *os.File
+
+		// check if generated template is only whitespace/empty
+		bufStr := strings.TrimSpace(t.Buf.String())
+		if len(bufStr) == 0 {
+			continue
+		}
+
+		// get file and filename
+		f, err = getFile(args, &t, true)
+		if err != nil {
+			return err
+		}
+
+		// write segment
+		_, err = t.Buf.WriteTo(f)
+		if err != nil {
+			return err
+		}
+	}
+
+	// build goimports parameters, closing files
+	for k, f := range files {
+
+		// close
+		err = f.Close()
+		if err != nil {
+			return err
+		}
+		delete(files, k)
 	}
 
 	return nil
