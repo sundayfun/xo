@@ -36,7 +36,7 @@ func (a *ArgType) TemplateSet() *TemplateSet {
 
 // ExecuteTemplate loads and parses the supplied template with name and
 // executes it with obj as the context.
-func (a *ArgType) ExecuteTemplate(tt TemplateType, name string, sub string, obj interface{}) error {
+func (a *ArgType) ExecuteTemplate(tt TemplateType, name string, sub string, obj interface{}, isProto bool) error {
 	var err error
 
 	// setup generated
@@ -63,7 +63,12 @@ func (a *ArgType) ExecuteTemplate(tt TemplateType, name string, sub string, obj 
 			loaderType = a.LoaderType + "."
 		}
 	}
-	templateName := fmt.Sprintf("%s%s.go.tpl", loaderType, tt)
+	templateName := ""
+	if isProto {
+		templateName = fmt.Sprintf("%s%s.proto.tpl", loaderType, tt)
+	} else {
+		templateName = fmt.Sprintf("%s%s.go.tpl", loaderType, tt)
+	}
 
 	// execute template
 	err = a.TemplateSet().Execute(v.Buf, templateName, obj)
@@ -71,7 +76,11 @@ func (a *ArgType) ExecuteTemplate(tt TemplateType, name string, sub string, obj 
 		return err
 	}
 
-	a.Generated = append(a.Generated, v)
+	if isProto {
+		a.GeneratedProto = append(a.GeneratedProto, v)
+	} else {
+		a.Generated = append(a.Generated, v)
+	}
 	return nil
 }
 
