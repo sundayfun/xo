@@ -956,6 +956,7 @@ func (a *ArgType) proto(pc ProtoConfig) string {
 option go_package = "%s/%s/proto";
 option java_multiple_files = true;
 option objc_class_prefix = "RPC";
+
 `, svc, strings.Join(imports, "\n"), a.ServerProtoPathPrefix, svc)
 
 	for _, p := range pc {
