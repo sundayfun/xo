@@ -230,3 +230,9 @@ type Query struct {
 	Type          *Type
 	Comment       string
 }
+
+type Imports struct {
+	Package string
+	Imports []string
+	Schema  string
+}
