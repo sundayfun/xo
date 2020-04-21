@@ -24,7 +24,7 @@ import (
 	_ "github.com/xo/xoutil"
 )
 
-const version = "1.0.1"
+const version = "1.0.2"
 
 func main() {
 	// circumvent all logic to just determine if xo was built with oracle
@@ -326,8 +326,14 @@ func getFile(args *internal.ArgType, t *internal.TBuf, isProto bool) (*os.File, 
 			f.WriteString(`// +build ` + args.Tags + "\n\n")
 		}
 
+		imports := &internal.Imports{
+			Package: args.Package,
+			Imports: args.Imports[t.Name],
+			Schema:  args.Schema,
+		}
+
 		// execute
-		err = args.TemplateSet().Execute(f, "xo_package.go.tpl", args)
+		err = args.TemplateSet().Execute(f, "xo_package.go.tpl", imports)
 		if err != nil {
 			return nil, err
 		}
