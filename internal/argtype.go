@@ -169,7 +169,7 @@ type ArgType struct {
 	// eg. github.com/sundayfun/daycam-server/backend
 	ServerProtoPathPrefix string `arg:"--server-proto-path-prefix"`
 
-	Imports []string `agr:"-"`
+	Imports map[string][]string `arg:"-"`
 
 	ToPBTypeMap map[string]string `arg:"-"`
 
@@ -266,6 +266,7 @@ func NewDefaultArgs() *ArgType {
 			"sql.NullFloat64": "google/protobuf/wrappers.proto",
 			"sql.NullBool":    "google/protobuf/wrappers.proto",
 			"mysql.NullTime":  "google/protobuf/timestamp.proto",
+			"time.Time":       "google/protobuf/timestamp.proto",
 		},
 	}
 }
