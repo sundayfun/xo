@@ -797,10 +797,10 @@ func (a *ArgType) modelToPB(option *MethodsOption) string {
 		fieldsAssignment = append(fieldsAssignment, fa)
 	}
 	body = body + fmt.Sprintf(
-		`proto%s := &proto.%s{
+		`proto%s := &%s.%s{
 	%s
 }
-`, option.Type.Name, option.Type.Name, strings.Join(fieldsAssignment, "\n"))
+`, option.Type.Name, option.ModelToPBConfig.ImportService, option.Type.Name, strings.Join(fieldsAssignment, "\n"))
 	for _, field := range option.Type.Fields {
 		if field.Col.NotNull {
 			continue
@@ -953,7 +953,7 @@ func (a *ArgType) proto(pc ProtoConfig) string {
 
 %s
 
-option go_package = "%s/%s/proto";
+option go_package = "%s/service/%s";
 option java_multiple_files = true;
 option objc_class_prefix = "RPC";
 
