@@ -723,10 +723,11 @@ func (tl TypeLoader) LoadOptionalMethods(args *ArgType, tableMap map[string]*Typ
 			option.ModelToPB = true
 			option.ModelToPBConfig = s
 
+			importStr := fmt.Sprintf("%s/service/%s", args.ServerProtoPathPrefix, s.ImportService)
 			if _, ok = args.Imports[t.Name]; ok {
-				args.Imports[t.Name] = append(args.Imports[t.Name],
-					fmt.Sprintf("%s/%s/proto", args.ServerProtoPathPrefix, s.ImportService),
-				)
+				args.Imports[t.Name] = append(args.Imports[t.Name], importStr)
+			} else {
+				args.Imports[t.Name] = []string{importStr}
 			}
 
 			if _, ok := pcs[s.ImportService]; ok {

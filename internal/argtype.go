@@ -268,6 +268,8 @@ func NewDefaultArgs() *ArgType {
 			"mysql.NullTime":  "google/protobuf/timestamp.proto",
 			"time.Time":       "google/protobuf/timestamp.proto",
 		},
+
+		Imports: make(map[string][]string),
 	}
 }
 
