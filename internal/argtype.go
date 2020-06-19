@@ -251,6 +251,7 @@ func NewDefaultArgs() *ArgType {
 			"uint16": "uint32",
 			"int":    "int32",
 			"uint":   "uint32",
+			"[]byte": "bytes",
 		},
 
 		WrapperTypeMap: map[string]string{
