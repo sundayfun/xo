@@ -912,7 +912,7 @@ func (a *ArgType) PBToModel(option *MethodsOption) string {
 					`if proto%s.%s != nil {
 	%s.%s = %s{%s:proto%s.%s.Value, Valid:true}
 }
-`, option.Type.Name, s, shortName, field.Name, field.Type, strings.Trim(typ, "Value"), option.Type.Name, s)
+`, option.Type.Name, s, shortName, field.Name, field.Type, strings.TrimSuffix(typ, "Value"), option.Type.Name, s)
 			}
 		}
 		body = body + fa
