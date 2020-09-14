@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"log"
 	"sort"
 	"strconv"
 	"strings"
@@ -772,7 +773,9 @@ func (a *ArgType) modelToPB(option *MethodsOption) string {
 		if _, ok := option.ModelToPBConfig.SkipFields[field.Col.ColumnName]; ok {
 			continue
 		}
-		if !field.Col.NotNull {
+		// TODO @heimonsy @kippa 这里需要处理一下 null 的情况
+		if !field.Col.NotNull && field.Type != "[]byte" {
+			log.Printf("WARN: %s.%s could be null, skipping!", option.Type.Name, field.Name)
 			continue
 		}
 		var f, fa string
@@ -786,7 +789,7 @@ func (a *ArgType) modelToPB(option *MethodsOption) string {
 `, f, shortName, field.Name)
 			fa = fmt.Sprintf(`%s:%s,`, SnakeToCamelWithoutInitialisms(field.Col.ColumnName), f)
 		} else {
-			if t, ok := a.ToPBTypeMap[field.Type]; ok {
+			if t, ok := a.ToPBTypeMap[field.Type]; ok && !a.IncompatilbePBType[t] {
 				fa = fmt.Sprintf(`%s:%s(%s.%s),`, SnakeToCamelWithoutInitialisms(field.Col.ColumnName),
 					t, shortName, field.Name)
 			} else {
@@ -853,7 +856,9 @@ func (a *ArgType) PBToModel(option *MethodsOption) string {
 		if _, ok := option.ModelToPBConfig.SkipFields[field.Col.ColumnName]; ok {
 			continue
 		}
-		if !field.Col.NotNull {
+		// TODO @heimonsy @kippa 这里需要处理一下 null 的情况
+		if !field.Col.NotNull && field.Type != "[]byte" {
+			log.Printf("WARN: %s.%s could be null, skipping!", option.Type.Name, field.Name)
 			continue
 		}
 		var f, fa string
@@ -867,7 +872,7 @@ func (a *ArgType) PBToModel(option *MethodsOption) string {
 `, f, option.Type.Name, field.Name)
 			fa = fmt.Sprintf(`%s:%s,`, field.Name, f)
 		} else {
-			if _, ok := a.ToPBTypeMap[field.Type]; ok {
+			if t, ok := a.ToPBTypeMap[field.Type]; ok && !a.IncompatilbePBType[t] {
 				fa = fmt.Sprintf(`%s:%s(proto%s.%s),`, field.Name, field.Type, option.Type.Name,
 					SnakeToCamelWithoutInitialisms(field.Col.ColumnName))
 			} else {

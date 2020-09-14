@@ -173,6 +173,8 @@ type ArgType struct {
 
 	ToPBTypeMap map[string]string `arg:"-"`
 
+	IncompatilbePBType map[string]bool `arg:"-"`
+
 	WrapperTypeMap map[string]string `arg:"-"`
 
 	ImportMap map[string]string `arg:"-"`
@@ -245,13 +247,21 @@ func NewDefaultArgs() *ArgType {
 
 		// TODO: @kippa 目前还没有处理 geo 相关类型
 		ToPBTypeMap: map[string]string{
-			"int8":   "int32",
-			"uint8":  "uint32",
-			"int16":  "int32",
-			"uint16": "uint32",
-			"int":    "int32",
-			"uint":   "uint32",
-			"[]byte": "bytes",
+			"int8":    "int32",
+			"uint8":   "uint32",
+			"int16":   "int32",
+			"uint16":  "uint32",
+			"int":     "int32",
+			"uint":    "uint32",
+			"[]byte":  "bytes",
+			"float64": "double",
+			"float32": "float",
+		},
+
+		IncompatilbePBType: map[string]bool{
+			"bytes":  true,
+			"double": true,
+			"float":  true,
 		},
 
 		WrapperTypeMap: map[string]string{
