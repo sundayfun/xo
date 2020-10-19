@@ -43,6 +43,7 @@ func (a *ArgType) NewTemplateFuncs() template.FuncMap {
 		"modelToPB":          a.modelToPB,
 		"PBToModel":          a.PBToModel,
 		"proto":              a.proto,
+		"GoPackageName":      goPackageName,
 	}
 }
 
@@ -803,7 +804,7 @@ func (a *ArgType) modelToPB(option *MethodsOption) string {
 		`proto%s := &%s.%s{
 	%s
 }
-`, option.Type.Name, option.ModelToPBConfig.ImportService, option.Type.Name, strings.Join(fieldsAssignment, "\n"))
+`, option.Type.Name, goPackageName(option.ModelToPBConfig.ImportService), option.Type.Name, strings.Join(fieldsAssignment, "\n"))
 	for _, field := range option.Type.Fields {
 		if field.Col.NotNull {
 			continue
@@ -962,7 +963,7 @@ option go_package = "%s/service/%s";
 option java_multiple_files = true;
 option objc_class_prefix = "RPC";
 
-`, svc, strings.Join(imports, "\n"), a.ServerProtoPathPrefix, svc)
+`, goPackageName(svc), strings.Join(imports, "\n"), a.ServerProtoPathPrefix, goPackageName(svc))
 
 	for _, p := range pc {
 		fieldsDef := make([]string, 0, len(p.Type.Fields))
@@ -1007,4 +1008,10 @@ func SnakeToCamelWithoutInitialisms(str string) string {
 		r += strings.ToUpper(w[:1]) + strings.ToLower(w[1:])
 	}
 	return r
+}
+
+// goPackageName public_story -> publicstory
+func goPackageName(name string) string {
+	name = strings.ReplaceAll(name, "-", "")
+	return strings.ReplaceAll(name, "_", "")
 }
