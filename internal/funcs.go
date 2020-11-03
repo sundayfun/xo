@@ -774,9 +774,7 @@ func (a *ArgType) modelToPB(option *MethodsOption) string {
 		if _, ok := option.ModelToPBConfig.SkipFields[field.Col.ColumnName]; ok {
 			continue
 		}
-		// TODO @heimonsy @kippa 这里需要处理一下 null 的情况
 		if !field.Col.NotNull && field.Type != "[]byte" {
-			log.Printf("WARN: %s.%s could be null, skipping!", option.Type.Name, field.Name)
 			continue
 		}
 		var f, fa string
@@ -806,7 +804,7 @@ func (a *ArgType) modelToPB(option *MethodsOption) string {
 }
 `, option.Type.Name, goPackageName(option.ModelToPBConfig.ImportService), option.Type.Name, strings.Join(fieldsAssignment, "\n"))
 	for _, field := range option.Type.Fields {
-		if field.Col.NotNull {
+		if field.Col.NotNull || field.Type == "[]byte" {
 			continue
 		}
 		if _, ok := option.ModelToPBConfig.SkipFields[field.Col.ColumnName]; ok {
@@ -827,14 +825,14 @@ func (a *ArgType) modelToPB(option *MethodsOption) string {
 `, shortName, field.Name,
 				f, shortName, field.Name,
 				option.Type.Name, s, f)
-		} else {
-			if typ, ok := a.WrapperTypeMap[field.Type]; ok {
-				fa = fmt.Sprintf(
-					`if %s.%s.Valid {
+		} else if typ, ok := a.WrapperTypeMap[field.Type]; ok {
+			fa = fmt.Sprintf(
+				`if %s.%s.Valid {
 	proto%s.%s = &wrappers.%s{Value:%s.%s.%s}
 }
 `, shortName, field.Name, option.Type.Name, s, typ, shortName, field.Name, strings.Trim(typ, "Value"))
-			}
+		} else {
+			log.Printf("WARN: %s.%s could be null, skipping!", option.Type.Name, field.Name)
 		}
 		body = body + fa
 	}
@@ -857,9 +855,7 @@ func (a *ArgType) PBToModel(option *MethodsOption) string {
 		if _, ok := option.ModelToPBConfig.SkipFields[field.Col.ColumnName]; ok {
 			continue
 		}
-		// TODO @heimonsy @kippa 这里需要处理一下 null 的情况
 		if !field.Col.NotNull && field.Type != "[]byte" {
-			log.Printf("WARN: %s.%s could be null, skipping!", option.Type.Name, field.Name)
 			continue
 		}
 		var f, fa string
@@ -872,14 +868,13 @@ func (a *ArgType) PBToModel(option *MethodsOption) string {
 	}
 `, f, option.Type.Name, field.Name)
 			fa = fmt.Sprintf(`%s:%s,`, field.Name, f)
+
+		} else if t, ok := a.ToPBTypeMap[field.Type]; ok && !a.IncompatilbePBType[t] {
+			fa = fmt.Sprintf(`%s:%s(proto%s.%s),`, field.Name, field.Type, option.Type.Name,
+				SnakeToCamelWithoutInitialisms(field.Col.ColumnName))
 		} else {
-			if t, ok := a.ToPBTypeMap[field.Type]; ok && !a.IncompatilbePBType[t] {
-				fa = fmt.Sprintf(`%s:%s(proto%s.%s),`, field.Name, field.Type, option.Type.Name,
-					SnakeToCamelWithoutInitialisms(field.Col.ColumnName))
-			} else {
-				fa = fmt.Sprintf(`%s:proto%s.%s,`, field.Name, option.Type.Name,
-					SnakeToCamelWithoutInitialisms(field.Col.ColumnName))
-			}
+			fa = fmt.Sprintf(`%s:proto%s.%s,`, field.Name, option.Type.Name,
+				SnakeToCamelWithoutInitialisms(field.Col.ColumnName))
 		}
 		fieldsAssignment = append(fieldsAssignment, fa)
 	}
@@ -894,7 +889,7 @@ func (a *ArgType) PBToModel(option *MethodsOption) string {
 		if _, ok := option.ModelToPBConfig.SkipFields[field.Col.ColumnName]; ok {
 			continue
 		}
-		if field.Col.NotNull {
+		if field.Col.NotNull || field.Type == "[]byte" {
 			continue
 		}
 		var s, fa string
@@ -912,14 +907,15 @@ func (a *ArgType) PBToModel(option *MethodsOption) string {
 `, option.Type.Name, s,
 				f, option.Type.Name, s,
 				shortName, field.Name, f)
-		} else {
-			if typ, ok := a.WrapperTypeMap[field.Type]; ok {
-				fa = fmt.Sprintf(
-					`if proto%s.%s != nil {
+
+		} else if typ, ok := a.WrapperTypeMap[field.Type]; ok {
+			fa = fmt.Sprintf(
+				`if proto%s.%s != nil {
 	%s.%s = %s{%s:proto%s.%s.Value, Valid:true}
 }
 `, option.Type.Name, s, shortName, field.Name, field.Type, strings.TrimSuffix(typ, "Value"), option.Type.Name, s)
-			}
+		} else {
+			log.Printf("WARN: %s.%s could be null, skipping!", option.Type.Name, field.Name)
 		}
 		body = body + fa
 	}
