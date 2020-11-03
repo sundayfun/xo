@@ -963,7 +963,7 @@ option go_package = "%s/service/%s";
 option java_multiple_files = true;
 option objc_class_prefix = "RPC";
 
-`, goPackageName(svc), strings.Join(imports, "\n"), a.ServerProtoPathPrefix, goPackageName(svc))
+`, svc, strings.Join(imports, "\n"), a.ServerProtoPathPrefix, goPackageName(svc))
 
 	for _, p := range pc {
 		fieldsDef := make([]string, 0, len(p.Type.Fields))
