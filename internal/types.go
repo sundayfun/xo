@@ -105,8 +105,8 @@ type MethodsConfig struct {
 }
 
 type TableConfig struct {
-	Name string   `yaml:"name"`
-	Skip []string `yaml:"skip"`
+	Name  string   `yaml:"name"`
+	Skips []string `yaml:"skips"`
 }
 
 // EnumValue holds data for a single enum value.

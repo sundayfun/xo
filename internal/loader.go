@@ -308,6 +308,11 @@ func (tl TypeLoader) LoadEnums(args *ArgType) (map[string]*Enum, error) {
 	if tl.EnumList == nil {
 		return nil, nil
 	}
+	if args.OnlyConfigTable {
+		if _, exists := args.ConfigTables[args.Schema]; !exists {
+			return nil, nil
+		}
+	}
 
 	// load enums
 	enumList, err := tl.EnumList(args.DB, args.Schema)
@@ -478,6 +483,12 @@ func (tl TypeLoader) LoadRelkind(args *ArgType, relType RelType) (map[string]*Ty
 	// tables
 	tableMap := make(map[string]*Type)
 	for _, ti := range tableList {
+		if args.OnlyConfigTable {
+			if _, exists := args.ConfigTables[ti.TableName]; !exists {
+				continue
+			}
+		}
+
 		// create template
 		typeTpl := &Type{
 			Name:    SingularizeIdentifier(ti.TableName),
@@ -698,8 +709,8 @@ func (tl TypeLoader) LoadOptionalMethods(args *ArgType, tableMap map[string]*Typ
 	modelToPBMap := make(map[string]*ModelToPBConfig, len(args.Methods.ModelToPB))
 	for s, c := range args.Methods.ModelToPB {
 		for _, m := range c {
-			skips := make(map[string]struct{}, len(m.Skip))
-			for _, skip := range m.Skip {
+			skips := make(map[string]struct{}, len(m.Skips))
+			for _, skip := range m.Skips {
 				skips[skip] = struct{}{}
 			}
 			modelToPBMap[m.Name] = &ModelToPBConfig{

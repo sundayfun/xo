@@ -235,6 +235,11 @@ func parseMethodsConfigFile(args *internal.ArgType) error {
 		return err
 	}
 	args.Methods = m
+	for _, v := range m.ModelToPB {
+		for _, table := range v {
+			args.ConfigTables[table.Name] = struct{}{}
+		}
+	}
 	return nil
 }
 
