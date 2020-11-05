@@ -155,6 +155,7 @@ type Type struct {
 	PrimaryKey       *Field
 	PrimaryKeyFields []*Field
 	Fields           []*Field
+	Indexes          map[string]*Index
 	Table            *models.Table
 	Comment          string
 	HasDeletedField  bool

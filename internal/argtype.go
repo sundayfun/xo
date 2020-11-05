@@ -183,6 +183,8 @@ type ArgType struct {
 	ImportMap map[string]string `arg:"-"`
 
 	ConfigTables map[string]struct{} `arg:"-"`
+	// 加载成功后的 TableMap
+	TableMap map[string]*Type `arg:"-"`
 }
 
 // NewDefaultArgs returns the default arguments.

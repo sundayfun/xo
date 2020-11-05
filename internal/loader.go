@@ -297,6 +297,8 @@ func (tl TypeLoader) LoadSchema(args *ArgType) error {
 	if err != nil {
 		return err
 	}
+
+	args.TableMap = tableMap
 	return nil
 }
 
@@ -496,6 +498,7 @@ func (tl TypeLoader) LoadRelkind(args *ArgType, relType RelType) (map[string]*Ty
 			RelType: relType,
 			Fields:  []*Field{},
 			Table:   ti,
+			Indexes: make(map[string]*Index),
 		}
 
 		// process columns
@@ -849,11 +852,13 @@ func (tl TypeLoader) LoadTableIndexes(args *ArgType, typeTpl *Type, ixMap map[st
 				args.BuildIndexFuncName(ixTplNew)
 				// distinct func name
 				ixMap[ixTplNew.FuncName] = ixTplNew
+				typeTpl.Indexes[ixTplNew.FuncName] = ixTplNew
 			}
 		}
 		if loadType == LoadMapFunc && len(ixTpl.Fields) == 1 && ix.IsUnique {
 			args.BuildIndexMapFuncName(ixTpl)
 			ixMap[ixTpl.MapFuncName] = ixTpl
+			typeTpl.Indexes[ixTpl.MapFuncName] = ixTpl
 		}
 	}
 
@@ -890,9 +895,15 @@ func (tl TypeLoader) LoadTableIndexes(args *ArgType, typeTpl *Type, ixMap map[st
 		}
 		switch loadType {
 		case LoadQueryFunc:
+			// xo_db 依赖 为空来判断类型
+			idx.MapFuncName = ""
 			ixMap[funcName] = idx
+			typeTpl.Indexes[funcName] = idx
+
 		case LoadMapFunc:
+			idx.FuncName = ""
 			ixMap[mapFuncName] = idx
+			typeTpl.Indexes[mapFuncName] = idx
 		}
 	}
 
