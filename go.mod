@@ -6,7 +6,7 @@ require (
 	github.com/gedex/inflector v0.0.0-20170307190818-16278e9db813
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/go-yaml/yaml v2.1.0+incompatible
-	github.com/knq/snaker v0.0.0-20180306023312-d9ad1e7f342a
+	github.com/kenshaw/snaker v0.1.0
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/lib/pq v1.0.0
 	github.com/mattn/go-sqlite3 v1.10.0
