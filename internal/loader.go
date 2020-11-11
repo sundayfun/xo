@@ -297,6 +297,8 @@ func (tl TypeLoader) LoadSchema(args *ArgType) error {
 	if err != nil {
 		return err
 	}
+
+	args.TableMap = tableMap
 	return nil
 }
 
@@ -307,6 +309,11 @@ func (tl TypeLoader) LoadEnums(args *ArgType) (map[string]*Enum, error) {
 	// not supplied, so bail
 	if tl.EnumList == nil {
 		return nil, nil
+	}
+	if args.OnlyConfigTable {
+		if _, exists := args.ConfigTables[args.Schema]; !exists {
+			return nil, nil
+		}
 	}
 
 	// load enums
@@ -478,6 +485,12 @@ func (tl TypeLoader) LoadRelkind(args *ArgType, relType RelType) (map[string]*Ty
 	// tables
 	tableMap := make(map[string]*Type)
 	for _, ti := range tableList {
+		if args.OnlyConfigTable {
+			if _, exists := args.ConfigTables[ti.TableName]; !exists {
+				continue
+			}
+		}
+
 		// create template
 		typeTpl := &Type{
 			Name:    SingularizeIdentifier(ti.TableName),
@@ -485,6 +498,7 @@ func (tl TypeLoader) LoadRelkind(args *ArgType, relType RelType) (map[string]*Ty
 			RelType: relType,
 			Fields:  []*Field{},
 			Table:   ti,
+			Indexes: make(map[string]*Index),
 		}
 
 		// process columns
@@ -698,8 +712,8 @@ func (tl TypeLoader) LoadOptionalMethods(args *ArgType, tableMap map[string]*Typ
 	modelToPBMap := make(map[string]*ModelToPBConfig, len(args.Methods.ModelToPB))
 	for s, c := range args.Methods.ModelToPB {
 		for _, m := range c {
-			skips := make(map[string]struct{}, len(m.Skip))
-			for _, skip := range m.Skip {
+			skips := make(map[string]struct{}, len(m.Skips))
+			for _, skip := range m.Skips {
 				skips[skip] = struct{}{}
 			}
 			modelToPBMap[m.Name] = &ModelToPBConfig{
@@ -838,11 +852,13 @@ func (tl TypeLoader) LoadTableIndexes(args *ArgType, typeTpl *Type, ixMap map[st
 				args.BuildIndexFuncName(ixTplNew)
 				// distinct func name
 				ixMap[ixTplNew.FuncName] = ixTplNew
+				typeTpl.Indexes[ixTplNew.FuncName] = ixTplNew
 			}
 		}
 		if loadType == LoadMapFunc && len(ixTpl.Fields) == 1 && ix.IsUnique {
 			args.BuildIndexMapFuncName(ixTpl)
 			ixMap[ixTpl.MapFuncName] = ixTpl
+			typeTpl.Indexes[ixTpl.MapFuncName] = ixTpl
 		}
 	}
 
@@ -879,9 +895,15 @@ func (tl TypeLoader) LoadTableIndexes(args *ArgType, typeTpl *Type, ixMap map[st
 		}
 		switch loadType {
 		case LoadQueryFunc:
+			// xo_db 依赖 为空来判断类型
+			idx.MapFuncName = ""
 			ixMap[funcName] = idx
+			typeTpl.Indexes[funcName] = idx
+
 		case LoadMapFunc:
+			idx.FuncName = ""
 			ixMap[mapFuncName] = idx
+			typeTpl.Indexes[mapFuncName] = idx
 		}
 	}
 

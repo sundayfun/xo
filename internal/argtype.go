@@ -160,6 +160,9 @@ type ArgType struct {
 	// Methods config file controls generation of specified methods for tables.
 	MethodsConfigFile string `arg:"--methods-config-file,help: specified methods config for tables"`
 
+	// OnlyConfigTable 只生成在 --methods-config-file 配置文件中的表
+	OnlyConfigTable bool `arg:"--only-config-table,help:only genereate tables in config file"`
+
 	// parsed from MethodsConfigFile
 	Methods *MethodsConfig `arg:"-"`
 
@@ -178,6 +181,10 @@ type ArgType struct {
 	WrapperTypeMap map[string]string `arg:"-"`
 
 	ImportMap map[string]string `arg:"-"`
+
+	ConfigTables map[string]struct{} `arg:"-"`
+	// 加载成功后的 TableMap
+	TableMap map[string]*Type `arg:"-"`
 }
 
 // NewDefaultArgs returns the default arguments.
@@ -281,6 +288,8 @@ func NewDefaultArgs() *ArgType {
 		},
 
 		Imports: make(map[string][]string),
+
+		ConfigTables: make(map[string]struct{}),
 	}
 }
 

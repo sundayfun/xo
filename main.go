@@ -235,6 +235,11 @@ func parseMethodsConfigFile(args *internal.ArgType) error {
 		return err
 	}
 	args.Methods = m
+	for _, v := range m.ModelToPB {
+		for _, table := range v {
+			args.ConfigTables[table.Name] = struct{}{}
+		}
+	}
 	return nil
 }
 
@@ -308,10 +313,12 @@ func getFile(args *internal.ArgType, t *internal.TBuf, isProto bool) (*os.File, 
 		mode = os.O_APPEND | os.O_WRONLY
 	}
 
+	// @heimonsy 考虑到我们的 xo_db 可能会经常改
+	// 这里就不跳过了
 	// skip
-	if t.TemplateType == internal.XOTemplate && fi != nil {
-		return nil, nil
-	}
+	//if t.TemplateType == internal.XOTemplate && fi != nil {
+	//return nil, nil
+	//}
 
 	// open file
 	f, err = os.OpenFile(filename, mode, 0666)

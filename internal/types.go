@@ -105,8 +105,8 @@ type MethodsConfig struct {
 }
 
 type TableConfig struct {
-	Name string   `yaml:"name"`
-	Skip []string `yaml:"skip"`
+	Name  string   `yaml:"name"`
+	Skips []string `yaml:"skips"`
 }
 
 // EnumValue holds data for a single enum value.
@@ -155,6 +155,7 @@ type Type struct {
 	PrimaryKey       *Field
 	PrimaryKeyFields []*Field
 	Fields           []*Field
+	Indexes          map[string]*Index
 	Table            *models.Table
 	Comment          string
 	HasDeletedField  bool
