@@ -705,10 +705,6 @@ func (tl TypeLoader) LoadOptionalMethods(args *ArgType, tableMap map[string]*Typ
 	if args.Methods == nil {
 		return nil
 	}
-	listFieldsMap := make(map[string]struct{}, len(args.Methods.ListFields))
-	for _, c := range args.Methods.ListFields {
-		listFieldsMap[c] = struct{}{}
-	}
 	modelToPBMap := make(map[string]*ModelToPBConfig, len(args.Methods.ModelToPB))
 	for s, c := range args.Methods.ModelToPB {
 		for _, m := range c {
@@ -730,9 +726,7 @@ func (tl TypeLoader) LoadOptionalMethods(args *ArgType, tableMap map[string]*Typ
 			Type: t,
 			Sub:  fmt.Sprintf("%sOptional", t.Name),
 		}
-		if _, ok := listFieldsMap[tableName]; ok {
-			option.ListFields = true
-		}
+		option.ListFields = true
 		if s, ok := modelToPBMap[tableName]; ok {
 			option.ModelToPB = true
 			option.ModelToPBConfig = s
