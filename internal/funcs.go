@@ -959,7 +959,7 @@ option go_package = "%s/service/%s";
 option java_multiple_files = true;
 option objc_class_prefix = "RPC";
 
-`, svc, strings.Join(imports, "\n"), a.ServerProtoPathPrefix, goPackageName(svc))
+`, ProtoName(svc), strings.Join(imports, "\n"), a.ServerProtoPathPrefix, goPackageName(svc))
 
 	for _, p := range pc {
 		fieldsDef := make([]string, 0, len(p.Type.Fields))
@@ -1010,4 +1010,8 @@ func SnakeToCamelWithoutInitialisms(str string) string {
 func goPackageName(name string) string {
 	name = strings.ReplaceAll(name, "-", "")
 	return strings.ReplaceAll(name, "_", "")
+}
+
+func ProtoName(name string) string {
+	return strings.ReplaceAll(name, "-", "_")
 }
