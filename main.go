@@ -285,7 +285,7 @@ func getFile(args *internal.ArgType, t *internal.TBuf, isProto bool) (*os.File, 
 	// determine filename
 	filename := strings.ToLower(t.Name)
 	if isProto {
-		filename = fmt.Sprintf("%s_model.proto", filename)
+		filename = fmt.Sprintf("%s_model.proto", internal.ProtoName(filename))
 		filename = path.Join(args.RpcProtoPathPrefix, filename)
 	} else {
 		filename = filename + args.Suffix
