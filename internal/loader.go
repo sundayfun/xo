@@ -147,7 +147,7 @@ func (tl TypeLoader) ParseQuery(args *ArgType) error {
 
 	// create template for query type
 	typeTpl := &Type{
-		Name:    args.QueryType,
+		Name:    GroupCompatible(args, args.QueryType),
 		RelType: Table,
 		Fields:  []*Field{},
 		Table: &models.Table{
@@ -493,7 +493,7 @@ func (tl TypeLoader) LoadRelkind(args *ArgType, relType RelType) (map[string]*Ty
 
 		// create template
 		typeTpl := &Type{
-			Name:    SingularizeIdentifier(ti.TableName),
+			Name:    GroupCompatible(args, SingularizeIdentifier(ti.TableName)),
 			Schema:  args.Schema,
 			RelType: relType,
 			Fields:  []*Field{},
