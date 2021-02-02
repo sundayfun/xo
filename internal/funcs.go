@@ -830,7 +830,7 @@ func (a *ArgType) modelToPB(option *MethodsOption) string {
 				`if %s.%s.Valid {
 	proto%s.%s = &wrappers.%s{Value:%s.%s.%s}
 }
-`, shortName, field.Name, option.Type.Name, s, typ, shortName, field.Name, strings.Trim(typ, "Value"))
+`, shortName, field.Name, option.Type.Name, s, typ, shortName, field.Name, strings.TrimSuffix(typ, "Value"))
 		} else {
 			log.Printf("WARN: %s.%s could be null, skipping!", option.Type.Name, field.Name)
 		}
