@@ -24,7 +24,7 @@ import (
 	_ "github.com/xo/xoutil"
 )
 
-const version = "1.0.2"
+const version = "1.1.0"
 
 func main() {
 	// circumvent all logic to just determine if xo was built with oracle

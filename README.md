@@ -34,13 +34,13 @@ The following is a matrix of the feature support for each database:
 Install `goimports` dependency (if not already installed):
 
 ```sh
-$ go get -u golang.org/x/tools/cmd/goimports
+$ go install golang.org/x/tools/cmd/goimports
 ```
 
 Then, install in the usual Go way:
 
 ```sh
-$ go get -u github.com/sundayfun/xo
+$ go install github.com/sundayfun/xo
 
 # install with oracle support (see notes below)
 $ go get -tags oracle -u github.com/sundayfun/xo
@@ -510,13 +510,13 @@ $ sudo alien -i oracle-instantclient-12.1-devel-*.rpm
 $ sudo alien -i oracle-instantclient-12.1-sqlplus-*.rpm
 
 # get xo
-$ go get -u github.com/sundayfun/xo
+$ go install github.com/sundayfun/xo
 
 # copy oci8.pc from xo/contrib to system pkg-config directory
 $ sudo cp $GOPATH/src/github.com/sundayfun/xo/contrib/oci8.pc /usr/lib/pkgconfig/
 
 # install rana's ora driver
-$ go get -u gopkg.in/rana/ora.v4
+$ go install gopkg.in/rana/ora.v4
 
 # assuming the above succeeded, install xo with oracle support enabled
 $ go install -tags oracle github.com/sundayfun/xo
