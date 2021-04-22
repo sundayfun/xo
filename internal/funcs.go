@@ -10,7 +10,7 @@ import (
 
 	"github.com/gedex/inflector"
 	"github.com/kenshaw/snaker"
-	"github.com/xo/xo/models"
+	"github.com/sundayfun/xo/models"
 )
 
 // NewTemplateFuncs returns a set of template funcs bound to the supplied args.
