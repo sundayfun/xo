@@ -94,7 +94,7 @@ WHERE n.nspname = %%schema string%% AND c.relkind = %%relkind string%%
 ENDSQL
 
 # postgres table column list query
-FIELDS='FieldOrdinal int,ColumnName string,DataType string,NotNull bool,DefaultValue sql.NullString,IsPrimaryKey bool'
+FIELDS='FieldOrdinal int,ColumnName string,ColumnComment string,DataType string,NotNull bool,DefaultValue sql.NullString,IsPrimaryKey bool'
 COMMENT='Column represents column info.'
 $XOBIN $PGDB -N -M -B -T Column -F PgTableColumns -Z "$FIELDS" --query-type-comment "$COMMENT" -o $DEST $EXTRA << ENDSQL
 SELECT
@@ -239,6 +239,7 @@ $XOBIN $MYDB -a -N -M -B -T Column -F MyTableColumns -o $DEST $EXTRA << ENDSQL
 SELECT
   ordinal_position AS field_ordinal,
   column_name,
+  column_comment,
   IF(data_type = 'enum', column_name, column_type) AS data_type,
   IF(is_nullable = 'YES', false, true) AS not_null,
   column_default AS default_value,
