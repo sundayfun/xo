@@ -7,7 +7,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	"github.com/sundayfun/xo/internal"
-	"github.com/xo/xo/models"
+	"github.com/sundayfun/xo/models"
 )
 
 func init() {

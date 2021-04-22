@@ -3,7 +3,7 @@ package internal
 import (
 	"strings"
 
-	"github.com/xo/xo/models"
+	"github.com/sundayfun/xo/models"
 )
 
 // TemplateType represents a template type.

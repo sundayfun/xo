@@ -8,7 +8,7 @@ import (
 	"github.com/kenshaw/snaker"
 
 	"github.com/sundayfun/xo/internal"
-	"github.com/xo/xo/models"
+	"github.com/sundayfun/xo/models"
 )
 
 func init() {
